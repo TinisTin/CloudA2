@@ -33,7 +33,17 @@ public class Driver extends Person {
 	 * 
 	 * @throws InterruptedException
 	 */
-	public void driveToDestination() {
-	}
+	 public void driveToDestination() {
+		    if (currentPassenger != null) { // Checks if there is a current passenger
+		        int travelTime = currentPassenger.getTravelTime(); // 
+		        try {
+		            Thread.sleep(travelTime); // Simulate driving time
+		        } catch (InterruptedException e) {
+		            Thread.currentThread().interrupt(); // Restore interrupted status
+		        }
+		        System.out.println(name + " drove " + currentPassenger.name + " to destination."); // Print Statement for Destination action
+		        currentPassenger = null; 
+		    }
+		}
 	
 }
