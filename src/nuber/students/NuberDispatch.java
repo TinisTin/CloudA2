@@ -46,8 +46,11 @@ public class NuberDispatch {
 	 * @param The driver to add to the queue.
 	 * @return Returns true if driver was added to the queue
 	 */
-	public boolean addDriver(Driver newDriver)
-	{
+	public boolean addDriver(Driver newDriver) {
+		if (idleDrivers.size() < MAX_DRIVERS) {
+			return idleDrivers.offer(newDriver);
+		}
+		return false;
 	}
 	
 	/**
