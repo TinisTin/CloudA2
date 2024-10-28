@@ -37,7 +37,7 @@ public class Driver extends Person {
 		    if (currentPassenger != null) { // Checks if there is a current passenger
 		        int travelTime = currentPassenger.getTravelTime(); // 
 		        try {
-		            Thread.sleep(travelTime); // Simulate driving time
+		            Thread.sleep(travelTime); 
 		        } catch (InterruptedException e) {
 		            Thread.currentThread().interrupt(); // Restore interrupted status
 		        }

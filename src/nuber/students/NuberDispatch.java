@@ -1,7 +1,12 @@
 package nuber.students;
 
+
+
 import java.util.HashMap;
 import java.util.concurrent.Future;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * The core Dispatch class that instantiates and manages everything for Nuber
@@ -17,6 +22,10 @@ public class NuberDispatch {
 	private final int MAX_DRIVERS = 999;
 	
 	private boolean logEvents = false;
+	
+	private Map<String, NuberRegion> regions;
+	
+	private Queue<Driver> idleDrivers;
 	
 	/**
 	 * Creates a new dispatch objects and instantiates the required regions and any other objects required.
