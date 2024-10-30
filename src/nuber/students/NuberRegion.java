@@ -16,8 +16,18 @@ import java.util.concurrent.Future;
  * @author james
  *
  */
-public class NuberRegion {
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class NuberRegion {
+	
+	private NuberDispatch dispatch;
+	private String regionName;
+    private int maxSimultaneousJobs; 
+	private int currentActiveJobs;
+	private ConcurrentHashMap<Passenger, Future<BookingResult>> bookings;
 	
 	/**
 	 * Creates a new Nuber region
@@ -28,6 +38,11 @@ public class NuberRegion {
 	 */
 	public NuberRegion(NuberDispatch dispatch, String regionName, int maxSimultaneousJobs)
 	{
+		 this.dispatch = dispatch;
+		 this.regionName = regionName;
+	     this.maxSimultaneousJobs = maxSimultaneousJobs;
+	     this.currentActiveJobs = 0;
+	     this.bookings = new ConcurrentHashMap<>();
 		
 
 	}

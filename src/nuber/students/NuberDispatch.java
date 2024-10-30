@@ -36,6 +36,14 @@ public class NuberDispatch {
 	 */
 	public NuberDispatch(HashMap<String, Integer> regionInfo, boolean logEvents)
 	{
+		this.logEvents = logEvents;
+		this.idleDrivers = new ConcurrentLinkedQueue<>();
+		this.regions = new HashMap<>();
+		
+		for (String regionName : regionInfo.keySet()) {
+			int maxBookings = regionInfo.get(regionName);
+			this.regions.put(regionName, new NuberRegion(this, regionName, maxBookings));
+		}
 	}
 	
 	/**
@@ -62,6 +70,7 @@ public class NuberDispatch {
 	 */
 	public Driver getDriver()
 	{
+		return idleDrivers.poll();
 	}
 
 	/**
@@ -92,7 +101,25 @@ public class NuberDispatch {
 	 * @return returns a Future<BookingResult> object
 	 */
 	public Future<BookingResult> bookPassenger(Passenger passenger, String region) {
+	    logEvent(null, "Attempting to book passenger: " + passenger + " in region: " + region);
+	    
+	    NuberRegion selectedRegion = regions.get(region);
+	    
+	    if (selectedRegion == null) {
+	        logEvent(null, "Failed booking - Region '" + region + "' does not exist.");
+	        return null; 
+	    }
+	    
+	    Future<BookingResult> result = selectedRegion.bookPassenger(passenger);
+	    
+	    if (result == null) {
+	        logEvent(null, "Booking could not proceed in region: " + region + " - region may be shutting down.");
+	    } else {
+	        logEvent(null, "Booking successfully processed in region: " + region);
+	    }
+	    return result;
 	}
+
 
 	/**
 	 * Gets the number of non-completed bookings that are awaiting a driver from dispatch
@@ -101,8 +128,7 @@ public class NuberDispatch {
 	 * 
 	 * @return Number of bookings awaiting driver, across ALL regions
 	 */
-	public int getBookingsAwaitingDriver()
-	{
+	public int getBookingsAwaitingDriver() {
 	}
 	
 	/**
