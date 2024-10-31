@@ -1,7 +1,5 @@
 package nuber.students;
 
-import java.util.concurrent.Future;
-
 /**
  * A single Nuber region that operates independently of other regions, other than getting 
  * drivers from bookings from the central dispatch.
@@ -20,13 +18,16 @@ import java.util.concurrent.Future;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+
 
 public class NuberRegion {
 	
 	private NuberDispatch dispatch;
 	private String regionName;
     private int maxSimultaneousJobs; 
-	private int currentActiveJobs;
+    private final AtomicInteger currentActiveJobs;
 	private ConcurrentHashMap<Passenger, Future<BookingResult>> bookings;
 	private int bookingsAwaitingDriver;
 	
@@ -42,7 +43,7 @@ public class NuberRegion {
 		 this.dispatch = dispatch;
 		 this.regionName = regionName;
 	     this.maxSimultaneousJobs = maxSimultaneousJobs;
-	     this.currentActiveJobs = 0;
+	     this.currentActiveJobs = new AtomicInteger(0);
 	     this.bookings = new ConcurrentHashMap<>();
 		
 
@@ -59,9 +60,26 @@ public class NuberRegion {
 	 * @param waitingPassenger
 	 * @return a Future that will provide the final BookingResult object from the completed booking
 	 */
-	public Future<BookingResult> bookPassenger(Passenger waitingPassenger)
-	{		
-		
+	public Future<BookingResult> bookPassenger(Passenger waitingPassenger) {
+	    if (currentActiveJobs.get() >= maxSimultaneousJobs) {
+	        dispatch.logEvent(null, "Booking rejected for passenger " + waitingPassenger + " in region " + regionName + ": Max bookings reached.");
+	        return null; 
+	    }
+
+	    CompletableFuture<BookingResult> bookingFuture = new CompletableFuture<>();
+	    bookings.put(waitingPassenger, bookingFuture); 
+
+	    int activeJobCount = currentActiveJobs.incrementAndGet();
+
+	    dispatch.logEvent(null, "Passenger " + waitingPassenger + " booked in region " + regionName + ". Active jobs: " + activeJobCount);
+
+	    processBooking(waitingPassenger, bookingFuture);
+
+	    return bookingFuture;
+	}
+	
+	private void processBooking(Passenger passenger, CompletableFuture<BookingResult> bookingFuture) {
+	
 	}
 	
 	/**
