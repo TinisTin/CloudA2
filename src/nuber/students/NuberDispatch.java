@@ -101,8 +101,10 @@ public class NuberDispatch {
 	 * @return returns a Future<BookingResult> object
 	 */
 	public Future<BookingResult> bookPassenger(Passenger passenger, String region) {
+	    // Log the attempt to book
 	    logEvent(null, "Attempting to book passenger: " + passenger + " in region: " + region);
 	    
+	    // Check if the specified region exists
 	    NuberRegion selectedRegion = regions.get(region);
 	    
 	    if (selectedRegion == null) {
@@ -110,6 +112,7 @@ public class NuberDispatch {
 	        return null; 
 	    }
 	    
+	    // Try booking the passenger in the selected region
 	    Future<BookingResult> result = selectedRegion.bookPassenger(passenger);
 	    
 	    if (result == null) {
@@ -121,6 +124,7 @@ public class NuberDispatch {
 	}
 
 
+
 	/**
 	 * Gets the number of non-completed bookings that are awaiting a driver from dispatch
 	 * 
@@ -129,12 +133,23 @@ public class NuberDispatch {
 	 * @return Number of bookings awaiting driver, across ALL regions
 	 */
 	public int getBookingsAwaitingDriver() {
+	    int totalBookingsAwaitingDriver = 0;
+
+	    for (NuberRegion region : regions.values()) {
+	        totalBookingsAwaitingDriver += region.getBookingsAwaitingDriver();
+	    }
+	    
+	    return totalBookingsAwaitingDriver;
+
 	}
 	
 	/**
 	 * Tells all regions to finish existing bookings already allocated, and stop accepting new bookings
 	 */
 	public void shutdown() {
+	    for (NuberRegion region : regions.values()) {
+	        region.shutdown();
+	    }
 	}
 
 }

@@ -28,6 +28,7 @@ public class NuberRegion {
     private int maxSimultaneousJobs; 
 	private int currentActiveJobs;
 	private ConcurrentHashMap<Passenger, Future<BookingResult>> bookings;
+	private int bookingsAwaitingDriver;
 	
 	/**
 	 * Creates a new Nuber region
@@ -68,6 +69,11 @@ public class NuberRegion {
 	 */
 	public void shutdown()
 	{
+	}
+
+	public int getBookingsAwaitingDriver() {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 		
 }
