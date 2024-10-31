@@ -79,14 +79,44 @@ public class NuberRegion {
 	}
 	
 	private void processBooking(Passenger passenger, CompletableFuture<BookingResult> bookingFuture) {
-	
+	    Driver driver = dispatch.getDriver(); 
+
+	    long tripDuration = calculateTripDuration(); 
+
+	    if (driver != null) {
+	        BookingResult result = new BookingResult(-1, passenger, driver, tripDuration); 
+	        bookingFuture.complete(result); 
+
+	        currentActiveJobs.decrementAndGet();
+	    } else {
+	        dispatch.logEvent(null, "No driver available for passenger " + passenger + " in region " + regionName);
+	        bookingFuture.complete(new BookingResult(-1, passenger, null, 0)); 
+
+	        currentActiveJobs.decrementAndGet();
+	    }
 	}
 	
+	private long calculateTripDuration() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 	/**
 	 * Called by dispatch to tell the region to complete its existing bookings and stop accepting any new bookings
 	 */
-	public void shutdown()
-	{
+	public void shutdown() {
+	    dispatch.logEvent(null, "Initiating shutdown process for region " + regionName + ".");
+
+	    for (Passenger passenger : bookings.keySet()) {
+	        CompletableFuture<BookingResult> future = (CompletableFuture<BookingResult>) bookings.get(passenger);
+	        if (!future.isDone()) {
+	            future.complete(new BookingResult(-1, null, null, 0)); 
+	            dispatch.logEvent(null, "Completed booking for passenger " + passenger + " due to region shutdown.");
+	        }
+	    }
+	    bookings.clear();
+
+	    dispatch.logEvent(null, "Shutdown process for region " + regionName + " completed. All existing bookings have been finalized.");
 	}
 
 	public int getBookingsAwaitingDriver() {
