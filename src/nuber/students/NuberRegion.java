@@ -59,17 +59,18 @@ public class NuberRegion {
 	    }
 
 	    if (currentActiveJobs.get() >= maxSimultaneousJobs) {
-	        dispatch.logEvent(null, "Booking rejected for passenger " + waitingPassenger + " in region " + regionName + ": Max bookings reached.");
+	        dispatch.logEvent(null, "Booking accepted for passenger " + waitingPassenger + " in region " + regionName + ": Added to pending booking");
 	        return null; 
 	    }
 
 	    CompletableFuture<BookingResult> bookingFuture = new CompletableFuture<>();
 	    bookings.put(waitingPassenger, bookingFuture); 
 
-	    int activeJobCount = currentActiveJobs.incrementAndGet();
-	    dispatch.logEvent(null, "Passenger " + waitingPassenger + ": " + "Starting " + regionName + ". Active jobs: " + activeJobCount);
-
-	    processBooking(waitingPassenger, bookingFuture);
+	    if (currentActiveJobs.get() < maxSimultaneousJobs) {
+	        int activeJobCount = currentActiveJobs.incrementAndGet(); 
+	        dispatch.logEvent(null, "Passenger " + waitingPassenger + ": Starting " + regionName);
+	        processBooking(waitingPassenger, bookingFuture);
+	    }
 
 	    return bookingFuture;
 	}
@@ -86,8 +87,10 @@ public class NuberRegion {
 	        dispatch.logEvent(null, "No driver available for passenger " + passenger + " in region " + regionName);
 	        bookingFuture.complete(new BookingResult(-1, passenger, null, 0)); 
 	    }
-	    
-	    currentActiveJobs.decrementAndGet();
+
+	    int remainingJobs = currentActiveJobs.decrementAndGet(); 
+	    dispatch.logEvent(null, "Active bookings: " + remainingJobs + ", pending: " + getBookingsAwaitingDriver());
+
 	}
 	
 	private long calculateTripDuration() {
@@ -99,13 +102,11 @@ public class NuberRegion {
 	 */
 	public void shutdown() {
 	    isShuttingDown = true; 
-	    dispatch.logEvent(null, "Initiating shutdown process for region " + regionName + ".");
 
 	    for (Passenger passenger : bookings.keySet()) {
 	        CompletableFuture<BookingResult> future = bookings.get(passenger);
 	        if (!future.isDone()) {
 	            future.complete(new BookingResult(-1, null, null, 0)); 
-	            dispatch.logEvent(null, "Completed booking for passenger " + passenger + " due to region shutdown.");
 	        }
 	    }
 	    bookings.clear();

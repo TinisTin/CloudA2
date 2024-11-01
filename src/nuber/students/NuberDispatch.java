@@ -26,7 +26,7 @@ public class NuberDispatch {
 	private Map<String, NuberRegion> regions;
 	
 	private Queue<Driver> idleDrivers;
-	
+		
 	
 	/**
 	 * Creates a new dispatch objects and instantiates the required regions and any other objects required.
@@ -41,10 +41,15 @@ public class NuberDispatch {
 		this.idleDrivers = new ConcurrentLinkedQueue<>();
 		this.regions = new HashMap<>();
 		
+        logEvent(null, "Creating Nuber Dispatch");
+
+		
 		for (String regionName : regionInfo.keySet()) {
 			int maxBookings = regionInfo.get(regionName);
 			this.regions.put(regionName, new NuberRegion(this, regionName, maxBookings));
+			logEvent(null, "Creating Nuber region for " + regionName);
 		}
+		logEvent(null, "Done creating " + regions.size() + " regions");
 	}
 	
 	/**
@@ -103,7 +108,7 @@ public class NuberDispatch {
 	 * @return returns a Future<BookingResult> object
 	 */
 	public Future<BookingResult> bookPassenger(Passenger passenger, String region) {
-        logEvent(null, "Attempting to book passenger: " + passenger.name() + " in region: " + region);
+        logEvent(null, passenger + ": " +  "Starting booking, getting driver");
         
         NuberRegion selectedRegion = regions.get(region);
         
@@ -112,13 +117,10 @@ public class NuberDispatch {
             return null; 
         }
         
-        Future<BookingResult> result = selectedRegion.bookPassenger(passenger);
+        logEvent(null, "Creating booking");
+
         
-        if (result == null) {
-            logEvent(null, "Booking could not proceed in region: " + region + " - region may be shutting down.");
-        } else {
-            logEvent(null, "Booking successfully processed in region: " + region);
-        }
+        Future<BookingResult> result = selectedRegion.bookPassenger(passenger);
         return result;
     }
 
@@ -157,7 +159,6 @@ public class NuberDispatch {
 		// TODO Auto-generated method stub
 		
 	}
-	
 	
 
 }
