@@ -1,5 +1,10 @@
 package nuber.students;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * A single Nuber region that operates independently of other regions, other than getting 
  * drivers from bookings from the central dispatch.
@@ -11,26 +16,16 @@ package nuber.students;
  * 
  * Bookings do NOT have to be completed in FIFO order.
  * 
- * @author james
- *
  */
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-
-
 public class NuberRegion {
 	
+	private boolean isShuttingDown = false;
 	private NuberDispatch dispatch;
 	private String regionName;
     private int maxSimultaneousJobs; 
     private final AtomicInteger currentActiveJobs;
-	private ConcurrentHashMap<Passenger, Future<BookingResult>> bookings;
-	private int bookingsAwaitingDriver;
-	
+	private ConcurrentHashMap<Passenger, CompletableFuture<BookingResult>> bookings;
+
 	/**
 	 * Creates a new Nuber region
 	 * 
@@ -38,29 +33,31 @@ public class NuberRegion {
 	 * @param regionName The regions name, unique for the dispatch instance
 	 * @param maxSimultaneousJobs The maximum number of simultaneous bookings the region is allowed to process
 	 */
-	public NuberRegion(NuberDispatch dispatch, String regionName, int maxSimultaneousJobs)
-	{
-		 this.dispatch = dispatch;
-		 this.regionName = regionName;
-	     this.maxSimultaneousJobs = maxSimultaneousJobs;
-	     this.currentActiveJobs = new AtomicInteger(0);
-	     this.bookings = new ConcurrentHashMap<>();
-		
-
+	public NuberRegion(NuberDispatch dispatch, String regionName, int maxSimultaneousJobs) {
+		this.dispatch = dispatch;
+		this.regionName = regionName;
+		this.maxSimultaneousJobs = maxSimultaneousJobs;
+		this.currentActiveJobs = new AtomicInteger(0);
+		this.bookings = new ConcurrentHashMap<>();
 	}
 	
 	/**
-	 * Creates a booking for given passenger, and adds the booking to the 
-	 * collection of jobs to process. Once the region has a position available, and a driver is available, 
+	 * Creates a booking for the given passenger and adds the booking to the 
+	 * collection of jobs to process. Once the region has a position available and a driver is available, 
 	 * the booking should commence automatically. 
 	 * 
-	 * If the region has been told to shutdown, this function should return null, and log a message to the 
+	 * If the region has been told to shut down, this function should return null and log a message to the 
 	 * console that the booking was rejected.
 	 * 
-	 * @param waitingPassenger
+	 * @param waitingPassenger The passenger who is booking
 	 * @return a Future that will provide the final BookingResult object from the completed booking
 	 */
 	public Future<BookingResult> bookPassenger(Passenger waitingPassenger) {
+	    if (isShuttingDown) {
+	        dispatch.logEvent(null, "Booking rejected for passenger " + waitingPassenger + " in region " + regionName + ": Region is shutting down.");
+	        return null; 
+	    }
+
 	    if (currentActiveJobs.get() >= maxSimultaneousJobs) {
 	        dispatch.logEvent(null, "Booking rejected for passenger " + waitingPassenger + " in region " + regionName + ": Max bookings reached.");
 	        return null; 
@@ -70,8 +67,7 @@ public class NuberRegion {
 	    bookings.put(waitingPassenger, bookingFuture); 
 
 	    int activeJobCount = currentActiveJobs.incrementAndGet();
-
-	    dispatch.logEvent(null, "Passenger " + waitingPassenger + " booked in region " + regionName + ". Active jobs: " + activeJobCount);
+	    dispatch.logEvent(null, "Passenger " + waitingPassenger + ": " + "Starting " + regionName + ". Active jobs: " + activeJobCount);
 
 	    processBooking(waitingPassenger, bookingFuture);
 
@@ -80,35 +76,33 @@ public class NuberRegion {
 	
 	private void processBooking(Passenger passenger, CompletableFuture<BookingResult> bookingFuture) {
 	    Driver driver = dispatch.getDriver(); 
-
 	    long tripDuration = calculateTripDuration(); 
 
 	    if (driver != null) {
 	        BookingResult result = new BookingResult(-1, passenger, driver, tripDuration); 
 	        bookingFuture.complete(result); 
-
-	        currentActiveJobs.decrementAndGet();
+	        dispatch.logEvent(null, "Booking completed for passenger " + passenger + " with driver " + driver + " in region " + regionName);
 	    } else {
 	        dispatch.logEvent(null, "No driver available for passenger " + passenger + " in region " + regionName);
 	        bookingFuture.complete(new BookingResult(-1, passenger, null, 0)); 
-
-	        currentActiveJobs.decrementAndGet();
 	    }
+	    
+	    currentActiveJobs.decrementAndGet();
 	}
 	
 	private long calculateTripDuration() {
-		// TODO Auto-generated method stub
-		return 0;
+		return 0; 
 	}
 
 	/**
 	 * Called by dispatch to tell the region to complete its existing bookings and stop accepting any new bookings
 	 */
 	public void shutdown() {
+	    isShuttingDown = true; 
 	    dispatch.logEvent(null, "Initiating shutdown process for region " + regionName + ".");
 
 	    for (Passenger passenger : bookings.keySet()) {
-	        CompletableFuture<BookingResult> future = (CompletableFuture<BookingResult>) bookings.get(passenger);
+	        CompletableFuture<BookingResult> future = bookings.get(passenger);
 	        if (!future.isDone()) {
 	            future.complete(new BookingResult(-1, null, null, 0)); 
 	            dispatch.logEvent(null, "Completed booking for passenger " + passenger + " due to region shutdown.");
@@ -116,12 +110,13 @@ public class NuberRegion {
 	    }
 	    bookings.clear();
 
-	    dispatch.logEvent(null, "Shutdown process for region " + regionName + " completed. All existing bookings have been finalized.");
 	}
 
+	/**
+	 * Returns the count of bookings awaiting a driver
+	 * @return number of bookings waiting for a driver
+	 */
 	public int getBookingsAwaitingDriver() {
-		// TODO Auto-generated method stub
-		return 0;
+		return (int) bookings.values().stream().filter(future -> !future.isDone()).count();
 	}
-		
 }

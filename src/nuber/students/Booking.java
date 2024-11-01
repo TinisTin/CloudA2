@@ -29,6 +29,7 @@ public class Booking {
 	private final NuberDispatch dispatch; 
 	private final Passenger passenger; 
 	private final long creationTime;
+	private Driver driver;
 		
 	/**
 	 * Creates a new booking for a given Nuber dispatch and passenger, noting that no
@@ -44,8 +45,15 @@ public class Booking {
         this.dispatch = dispatch; 
         this.passenger = passenger; 
         this.creationTime = new Date().getTime(); 
+        
+        logEvent(bookingId + ": null:null: Creating booking");
 	}
 	
+	private void logEvent(String string) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	/**
 	 * At some point, the Nuber Region responsible for the booking can start it (has free spot),
 	 * and calls the Booking.call() function, which:
@@ -98,8 +106,10 @@ public class Booking {
 	 * @return The compiled string
 	 */
 	@Override
-	public String toString()
-	{
-	}
-
+	public String toString() {
+        String driverName = (driver != null) ? driver.name : "null"; // Use the stored driver reference
+        String passengerName = (passenger != null) ? passenger.name : "null";
+        
+        return bookingId + ": " + driverName + ": " + passengerName;
+    }
 }

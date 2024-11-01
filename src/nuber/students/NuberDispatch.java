@@ -27,6 +27,7 @@ public class NuberDispatch {
 	
 	private Queue<Driver> idleDrivers;
 	
+	
 	/**
 	 * Creates a new dispatch objects and instantiates the required regions and any other objects required.
 	 * It should be able to handle a variable number of regions based on the HashMap provided.
@@ -85,6 +86,7 @@ public class NuberDispatch {
 		
 		if (!logEvents) return;
 		
+	    String bookingId = (booking != null) ? booking.toString() : "Booking not available";
 		System.out.println(booking + ": " + message);
 		
 	}
@@ -101,29 +103,24 @@ public class NuberDispatch {
 	 * @return returns a Future<BookingResult> object
 	 */
 	public Future<BookingResult> bookPassenger(Passenger passenger, String region) {
-	    // Log the attempt to book
-	    logEvent(null, "Attempting to book passenger: " + passenger + " in region: " + region);
-	    
-	    // Check if the specified region exists
-	    NuberRegion selectedRegion = regions.get(region);
-	    
-	    if (selectedRegion == null) {
-	        logEvent(null, "Failed booking - Region '" + region + "' does not exist.");
-	        return null; 
-	    }
-	    
-	    // Try booking the passenger in the selected region
-	    Future<BookingResult> result = selectedRegion.bookPassenger(passenger);
-	    
-	    if (result == null) {
-	        logEvent(null, "Booking could not proceed in region: " + region + " - region may be shutting down.");
-	    } else {
-	        logEvent(null, "Booking successfully processed in region: " + region);
-	    }
-	    return result;
-	}
-
-
+        logEvent(null, "Attempting to book passenger: " + passenger.name() + " in region: " + region);
+        
+        NuberRegion selectedRegion = regions.get(region);
+        
+        if (selectedRegion == null) {
+            logEvent(null, "Failed booking - Region '" + region + "' does not exist.");
+            return null; 
+        }
+        
+        Future<BookingResult> result = selectedRegion.bookPassenger(passenger);
+        
+        if (result == null) {
+            logEvent(null, "Booking could not proceed in region: " + region + " - region may be shutting down.");
+        } else {
+            logEvent(null, "Booking successfully processed in region: " + region);
+        }
+        return result;
+    }
 
 	/**
 	 * Gets the number of non-completed bookings that are awaiting a driver from dispatch
@@ -155,5 +152,12 @@ public class NuberDispatch {
 	public void releaseDriver(Driver driver) {
 		addDriver(driver);		
 	}
+
+	public void logEvent(String string) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	
 
 }

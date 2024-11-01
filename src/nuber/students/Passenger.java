@@ -12,4 +12,13 @@ public class Passenger extends Person
 		return (int)(Math.random() * maxSleep);
 	}
 
+	public String toString() {
+        return name; // Return the passenger's name
+    }
+
+	public String name() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

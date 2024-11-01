@@ -2,12 +2,14 @@ package nuber.students;
 
 public class Driver extends Person {
 
-	private Passenger currentPassenger;
+    private Passenger passenger;
 	
 	public Driver(String driverName, int maxSleep)
 	{
 		super(driverName, maxSleep);
-		currentPassenger = null;
+		this.passenger = null;	
+		
+		
 	}
 	
 	/**
@@ -17,15 +19,16 @@ public class Driver extends Person {
 	 * @param newPassenger Passenger to collect
 	 * @throws InterruptedException
 	 */
-	 public void pickUpPassenger(Passenger newPassenger) {
-	        currentPassenger = newPassenger; // Store the current passenger
-	        try {
-	            Thread.sleep((int) (Math.random() * maxSleep)); // Sleep for a random time
-	        } catch (InterruptedException e) {
-	            Thread.currentThread().interrupt(); // Restore interrupted status
-	        }
-	        System.out.println(name + " picked up " + newPassenger.name); // Print statement for pickup action 
-	    }
+	public void pickUpPassenger(Passenger passenger) {
+        this.passenger = passenger;
+        int delay = (int) (Math.random() * maxSleep);
+        try {
+            Thread.sleep(delay);	
+            logEvent(getId() + ":D-" + name + ":" + passenger.name + ": Collected passenger, on way to destination");
+        } catch (InterruptedException e) {
+            logEvent("Driver interrupted: " + e.getMessage());
+        }
+    }
 
 	/**
 	 * Sleeps the thread for the amount of time returned by the current 
@@ -34,16 +37,22 @@ public class Driver extends Person {
 	 * @throws InterruptedException
 	 */
 	 public void driveToDestination() {
-		    if (currentPassenger != null) { // Checks if there is a current passenger
-		        int travelTime = currentPassenger.getTravelTime(); // 
-		        try {
-		            Thread.sleep(travelTime); 
-		        } catch (InterruptedException e) {
-		            Thread.currentThread().interrupt(); // Restore interrupted status
-		        }
-		        System.out.println(name + " drove " + currentPassenger.name + " to destination."); // Print Statement for Destination action
-		        currentPassenger = null; 
-		    }
-		}
+	        int travelTime = passenger.getTravelTime();
+	        try {
+	            Thread.sleep(travelTime);
+	            logEvent(getId() + ":D-" + name + ":" + passenger.name + ": At destination, driver is now free");
+	        } catch (InterruptedException e) {
+	            logEvent("Driver interrupted: " + e.getMessage());
+	        }
+	    }
+	 
+	 private void logEvent(String message) {
+	        System.out.println(message); 
+	    }
+	 
+	 public String toString() {
+	        return name; 
+	    }
+	}
+
 	
-}
