@@ -24,9 +24,9 @@ public class Driver extends Person {
         int delay = (int) (Math.random() * maxSleep);
         try {
             Thread.sleep(delay); // Time simulation to take to pick up passenger
-            logEvent(getId() + ":D-" + name + ":" + passenger.name + ": Collected passenger, on way to destination");
+            logEvent(getId() + name + ":" + passenger.name + ": Collected passenger, on way to destination");
         } catch (InterruptedException e) {
-            logEvent("Driver interrupted: " + e.getMessage());
+            logEvent("Driver sinterrupted: " + e.getMessage());
         }
     }
 

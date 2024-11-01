@@ -90,6 +90,12 @@ public class NuberRegion {
 	
 	private void processBooking(Passenger passenger, CompletableFuture<BookingResult> bookingFuture) {
 	    Driver driver = dispatch.getDriver(); 
+	    if (driver != null) {
+            driver.pickUpPassenger(passenger); // Pick up the passenger
+            driver.driveToDestination(); // Drive to destination
+        } else {
+            System.out.println("No available drivers for passenger " + passenger.name);
+        }
 	    long tripDuration = calculateTripDuration(); 
 
 	    // If a driver is available, complete booking
