@@ -1,4 +1,8 @@
 package nuber.students;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Date;
+
+
 
 /**
  * 
@@ -19,7 +23,12 @@ package nuber.students;
  *
  */
 public class Booking {
-
+	
+	private static final AtomicInteger idCounter = new AtomicInteger(0);
+	private final int bookingId; 
+	private final NuberDispatch dispatch; 
+	private final Passenger passenger; 
+	private final long creationTime;
 		
 	/**
 	 * Creates a new booking for a given Nuber dispatch and passenger, noting that no
@@ -31,6 +40,10 @@ public class Booking {
 	 */
 	public Booking(NuberDispatch dispatch, Passenger passenger)
 	{
+		this.bookingId = idCounter.incrementAndGet(); 
+        this.dispatch = dispatch; 
+        this.passenger = passenger; 
+        this.creationTime = new Date().getTime(); 
 	}
 	
 	/**
@@ -43,7 +56,7 @@ public class Booking {
 	 * 4.	It must then call the Driver.driveToDestination() function, with the thread pausing 
 	 * 			whilst as function is called.
 	 * 5.	Once at the destination, the time is recorded, so we know the total trip duration. 
-	 * 6.	The driver, now free, is added back into Dispatch’s list of available drivers. 
+	 * 6.	The driver, now free, is added back into Dispatchï¿½s list of available drivers. 
 	 * 7.	The call() function the returns a BookingResult object, passing in the appropriate 
 	 * 			information required in the BookingResult constructor.
 	 *
