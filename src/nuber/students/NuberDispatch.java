@@ -152,4 +152,8 @@ public class NuberDispatch {
 	    }
 	}
 
+	public void releaseDriver(Driver driver) {
+		addDriver(driver);		
+	}
+
 }

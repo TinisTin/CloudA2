@@ -63,6 +63,27 @@ public class Booking {
 	 * @return A BookingResult containing the final information about the booking 
 	 */
 	public BookingResult call() {
+	    Driver driver = dispatch.getDriver(); 
+
+	    while (driver == null) {
+	        driver = dispatch.getDriver(); 
+	        try {
+	            Thread.sleep(100); 
+	        } catch (InterruptedException e) {
+	            Thread.currentThread().interrupt(); 
+	        }
+	    }
+
+	    driver.pickUpPassenger(passenger); 
+
+	    driver.driveToDestination(); 
+
+	    long endTime = new Date().getTime();
+	    long duration = endTime - creationTime;
+
+	    dispatch.releaseDriver(driver);
+
+	    return new BookingResult(bookingId, passenger, driver, duration);
 
 	}
 	
