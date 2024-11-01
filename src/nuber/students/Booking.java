@@ -24,8 +24,8 @@ import java.util.Date;
  */
 public class Booking {
 	
-	private static final AtomicInteger idCounter = new AtomicInteger(0);
-	private final int bookingId; 
+	private static final AtomicInteger idCounter = new AtomicInteger(0); // Unique ID counter
+	private final int bookingId; // Booking Id
 	private final NuberDispatch dispatch; 
 	private final Passenger passenger; 
 	private final long creationTime;
@@ -41,12 +41,12 @@ public class Booking {
 	 */
 	public Booking(NuberDispatch dispatch, Passenger passenger)
 	{
-		this.bookingId = idCounter.incrementAndGet(); 
+		this.bookingId = idCounter.incrementAndGet(); // Generate unique id
         this.dispatch = dispatch; 
         this.passenger = passenger; 
         this.creationTime = new Date().getTime(); 
         
-        logEvent(bookingId + ": null:null: Creating booking");
+        logEvent(bookingId + ": null:null: Creating booking"); //Records creation time 
 	}
 	
 	private void logEvent(String string) {
@@ -71,26 +71,29 @@ public class Booking {
 	 * @return A BookingResult containing the final information about the booking 
 	 */
 	public BookingResult call() {
-	    Driver driver = dispatch.getDriver(); 
+	    Driver driver = dispatch.getDriver(); // Attempt to get available driver
 
+	    // Waiting for driver to become available 
 	    while (driver == null) {
 	        driver = dispatch.getDriver(); 
 	        try {
-	            Thread.sleep(100); 
+	            Thread.sleep(100);  // Pause to check
 	        } catch (InterruptedException e) {
 	            Thread.currentThread().interrupt(); 
 	        }
 	    }
 
-	    driver.pickUpPassenger(passenger); 
+	    driver.pickUpPassenger(passenger); // Driver picks up passenger
 
-	    driver.driveToDestination(); 
+	    driver.driveToDestination(); // Driver takes passenger to destination
 
+	    // Calculates total trip time
 	    long endTime = new Date().getTime();
-	    long duration = endTime - creationTime;
+	    long duration = endTime - creationTime; 
 
 	    dispatch.releaseDriver(driver);
 
+	    // Returns booking result
 	    return new BookingResult(bookingId, passenger, driver, duration);
 
 	}
@@ -107,7 +110,7 @@ public class Booking {
 	 */
 	@Override
 	public String toString() {
-        String driverName = (driver != null) ? driver.name : "null"; // Use the stored driver reference
+        String driverName = (driver != null) ? driver.name : "null"; 
         String passengerName = (passenger != null) ? passenger.name : "null";
         
         return bookingId + ": " + driverName + ": " + passengerName;

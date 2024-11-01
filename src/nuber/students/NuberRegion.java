@@ -40,7 +40,7 @@ public class NuberRegion {
 		this.maxSimultaneousJobs = maxSimultaneousJobs;
 		this.currentActiveJobs = new AtomicInteger(0);
 		this.pendingBookings = new AtomicInteger(0);
-		this.bookings = new ConcurrentHashMap<>();
+		this.bookings = new ConcurrentHashMap<>(); // Stores all bookings in the region
 	}
 	
 	/**
@@ -55,11 +55,14 @@ public class NuberRegion {
 	 * @return a Future that will provide the final BookingResult object from the completed booking
 	 */
 	public Future<BookingResult> bookPassenger(Passenger waitingPassenger) {
+		
+		// Checks if region is shutting down
 	    if (isShuttingDown) {
 	        dispatch.logEvent(null, "Booking rejected for passenger " + waitingPassenger + " in region " + regionName + ": Region is shutting down.");
 	        return null; 
 	    }
 
+	    // If current active jobs reached the limit, add booking to pending 
 	    if (currentActiveJobs.get() >= maxSimultaneousJobs) {
 	        dispatch.logEvent(null, "Booking accepted for passenger " + waitingPassenger + " in region " + regionName + ": Added to pending booking");
 	        pendingBookings.incrementAndGet();
@@ -68,12 +71,14 @@ public class NuberRegion {
 	        return pendingFuture;
 	    }
 
+	    // Create for new bookings
 	    CompletableFuture<BookingResult> bookingFuture = new CompletableFuture<>();
 	    bookings.put(waitingPassenger, bookingFuture); 
 	    
+	    // Increment the count of active jobs 
 	    currentActiveJobs.incrementAndGet(); 
 
-
+	    // If current active jobs is below the max, process the booking immediately
 	    if (currentActiveJobs.get() < maxSimultaneousJobs) {
 	        pendingBookings.incrementAndGet();
 	        dispatch.logEvent(null, "Passenger " + waitingPassenger + ": Starting " + regionName);
@@ -87,6 +92,7 @@ public class NuberRegion {
 	    Driver driver = dispatch.getDriver(); 
 	    long tripDuration = calculateTripDuration(); 
 
+	    // If a driver is available, complete booking
 	    if (driver != null) {
 	        BookingResult result = new BookingResult(-1, passenger, driver, tripDuration); 
 	        bookingFuture.complete(result); 
@@ -94,10 +100,12 @@ public class NuberRegion {
 	        currentActiveJobs.decrementAndGet();
 	        pendingBookings.decrementAndGet();
 	    } else {
+	        // If no driver is available, complete the future with null driver
 	        dispatch.logEvent(null, "No driver available for passenger " + passenger + " in region " + regionName);
 	        bookingFuture.complete(new BookingResult(-1, passenger, null, 0)); 
 	    }
 
+	    // Log the number of active and pending bookings
 	    int remainingJobs = currentActiveJobs.decrementAndGet(); 
 	    dispatch.logEvent(null, "Active bookings: " + remainingJobs + ", pending: " + pendingBookings);
 	    

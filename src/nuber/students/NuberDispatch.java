@@ -21,9 +21,9 @@ public class NuberDispatch {
 	 */
 	private final int MAX_DRIVERS = 999;
 	
-	private boolean logEvents = false;
+	private boolean logEvents = false; // Control event logging 
 	
-	private Map<String, NuberRegion> regions;
+	private Map<String, NuberRegion> regions; // Map to store regions
 	
 	private Queue<Driver> idleDrivers;
 		
@@ -41,15 +41,15 @@ public class NuberDispatch {
 		this.idleDrivers = new ConcurrentLinkedQueue<>();
 		this.regions = new HashMap<>();
 		
-        logEvent(null, "Creating Nuber Dispatch");
+        logEvent(null, "Creating Nuber Dispatch"); // Log dispatch creation
 
-		
+		// Creates region with provided information
 		for (String regionName : regionInfo.keySet()) {
 			int maxBookings = regionInfo.get(regionName);
 			this.regions.put(regionName, new NuberRegion(this, regionName, maxBookings));
 			logEvent(null, "Creating Nuber region for " + regionName);
 		}
-		logEvent(null, "Done creating " + regions.size() + " regions");
+		logEvent(null, "Done creating " + regions.size() + " regions"); // Log completion of region creation
 	}
 	
 	/**
@@ -62,7 +62,7 @@ public class NuberDispatch {
 	 */
 	public boolean addDriver(Driver newDriver) {
 		if (idleDrivers.size() < MAX_DRIVERS) {
-			return idleDrivers.offer(newDriver);
+			return idleDrivers.offer(newDriver); // Adds driver to the queue
 		}
 		return false;
 	}
@@ -76,7 +76,7 @@ public class NuberDispatch {
 	 */
 	public Driver getDriver()
 	{
-		return idleDrivers.poll();
+		return idleDrivers.poll(); // Removes and returns driver from the queue 
 	}
 
 	/**
@@ -108,9 +108,9 @@ public class NuberDispatch {
 	 * @return returns a Future<BookingResult> object
 	 */
 	public Future<BookingResult> bookPassenger(Passenger passenger, String region) {
-        logEvent(null, passenger + ": " +  "Starting booking, getting driver");
+        logEvent(null, passenger + ": " +  "Starting booking, getting driver"); // Booking starts
         
-        NuberRegion selectedRegion = regions.get(region);
+        NuberRegion selectedRegion = regions.get(region); // Gets selected region
         
         if (selectedRegion == null) {
             logEvent(null, "Failed booking - Region '" + region + "' does not exist.");
@@ -118,9 +118,7 @@ public class NuberDispatch {
         }
         
         logEvent(null, "Creating booking");
-
-        
-        Future<BookingResult> result = selectedRegion.bookPassenger(passenger);
+        Future<BookingResult> result = selectedRegion.bookPassenger(passenger); // Creates booking in region
         return result;
     }
 
@@ -132,8 +130,9 @@ public class NuberDispatch {
 	 * @return Number of bookings awaiting driver, across ALL regions
 	 */
 	public int getBookingsAwaitingDriver() {
-	    int totalBookingsAwaitingDriver = 0;
+	    int totalBookingsAwaitingDriver = 0; // Initialize counter 
 
+	    // Adds bookings awaiting for a driver 
 	    for (NuberRegion region : regions.values()) {
 	        totalBookingsAwaitingDriver += region.getBookingsAwaitingDriver();
 	    }
@@ -147,12 +146,12 @@ public class NuberDispatch {
 	 */
 	public void shutdown() {
 	    for (NuberRegion region : regions.values()) {
-	        region.shutdown();
+	        region.shutdown(); // Shutdown each region
 	    }
 	}
 
 	public void releaseDriver(Driver driver) {
-		addDriver(driver);		
+		addDriver(driver); // Adds driver back to queue
 	}
 
 	public void logEvent(String string) {
