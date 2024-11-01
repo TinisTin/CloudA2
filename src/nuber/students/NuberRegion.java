@@ -24,6 +24,7 @@ public class NuberRegion {
 	private String regionName;
     private int maxSimultaneousJobs; 
     private final AtomicInteger currentActiveJobs;
+    private final AtomicInteger pendingBookings;
 	private ConcurrentHashMap<Passenger, CompletableFuture<BookingResult>> bookings;
 
 	/**
@@ -38,6 +39,7 @@ public class NuberRegion {
 		this.regionName = regionName;
 		this.maxSimultaneousJobs = maxSimultaneousJobs;
 		this.currentActiveJobs = new AtomicInteger(0);
+		this.pendingBookings = new AtomicInteger(0);
 		this.bookings = new ConcurrentHashMap<>();
 	}
 	
@@ -60,14 +62,20 @@ public class NuberRegion {
 
 	    if (currentActiveJobs.get() >= maxSimultaneousJobs) {
 	        dispatch.logEvent(null, "Booking accepted for passenger " + waitingPassenger + " in region " + regionName + ": Added to pending booking");
-	        return null; 
+	        pendingBookings.incrementAndGet();
+	        CompletableFuture<BookingResult> pendingFuture = new CompletableFuture<>();
+	        bookings.put(waitingPassenger, pendingFuture);
+	        return pendingFuture;
 	    }
 
 	    CompletableFuture<BookingResult> bookingFuture = new CompletableFuture<>();
 	    bookings.put(waitingPassenger, bookingFuture); 
+	    
+	    currentActiveJobs.incrementAndGet(); 
+
 
 	    if (currentActiveJobs.get() < maxSimultaneousJobs) {
-	        int activeJobCount = currentActiveJobs.incrementAndGet(); 
+	        pendingBookings.incrementAndGet();
 	        dispatch.logEvent(null, "Passenger " + waitingPassenger + ": Starting " + regionName);
 	        processBooking(waitingPassenger, bookingFuture);
 	    }
@@ -83,14 +91,16 @@ public class NuberRegion {
 	        BookingResult result = new BookingResult(-1, passenger, driver, tripDuration); 
 	        bookingFuture.complete(result); 
 	        dispatch.logEvent(null, "Booking completed for passenger " + passenger + " with driver " + driver + " in region " + regionName);
+	        currentActiveJobs.decrementAndGet();
+	        pendingBookings.decrementAndGet();
 	    } else {
 	        dispatch.logEvent(null, "No driver available for passenger " + passenger + " in region " + regionName);
 	        bookingFuture.complete(new BookingResult(-1, passenger, null, 0)); 
 	    }
 
 	    int remainingJobs = currentActiveJobs.decrementAndGet(); 
-	    dispatch.logEvent(null, "Active bookings: " + remainingJobs + ", pending: " + getBookingsAwaitingDriver());
-
+	    dispatch.logEvent(null, "Active bookings: " + remainingJobs + ", pending: " + pendingBookings);
+	    
 	}
 	
 	private long calculateTripDuration() {
@@ -120,4 +130,9 @@ public class NuberRegion {
 	public int getBookingsAwaitingDriver() {
 		return (int) bookings.values().stream().filter(future -> !future.isDone()).count();
 	}
+	
+	public int getPendingBookings() {
+	    return pendingBookings.get(); 
+	}
 }
+
